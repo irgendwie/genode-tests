@@ -12,7 +12,6 @@ if {[expr !$use_usb_driver && !$use_nic_driver] ||
 set build_components {
     core init
     drivers/timer drivers/nic
-    lib/vfs/lwip
     app/child app/hello
 }
 
@@ -54,15 +53,8 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="child" caps="200">
+	<start name="child" caps="300">
 		<resource name="RAM" quantum="8M"/>
-		<config>
-    <vfs>
-    				<dir name="dev">    <log/>             </dir>
-    				<dir name="socket"> <lwip dhcp="yes"/> </dir>
-    			</vfs>
-    			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
-		</config>
 	</start>}
 
 append_if [have_spec gpio] config "
@@ -85,13 +77,6 @@ append_if $use_usb_driver config {
 
 append_platform_drv_config
 
-append_if $use_nic_driver config {
-	<start name="nic_drv" caps="130">
-		<resource name="RAM" quantum="20M"/>
-		<provides><service name="Nic"/></provides>
-		} [nic_drv_config] {
-	</start>}
-
 append config {
 </config>
 }
@@ -102,10 +87,10 @@ install_config $config
 # Boot image
 #
 
-build_boot_image { core ld.lib.so init child hello nic_drv vfs_lwip.lib.so timer libc.lib.so vfs.lib.so }
+build_boot_image { core ld.lib.so init child hello timer }
 
 append qemu_args " -nographic "
 
-append_if [have_spec lan9118] qemu_args " -net nic,macaddr=02:00:00:00:01:03 -net nic,model=lan9118 -net tap,ifname=tap0,script=no "
+#append_if [have_spec lan9119] qemu_args " -net nic,macaddr=02:00:00:00:01:03 -net nic,model=lan9118 -net tap,ifname=tap0,script=no "
 
 run_genode_until forever
