@@ -70,24 +70,33 @@ public:
   }
 };
 
+namespace Example {
+  struct Main;
+}
+
+struct Example::Main
+{
+  Genode::Env &_env;
+
+  Genode::Heap _heap { _env.ram(), _env.rm() };
+
+  MyChild::Parent_services _parent_services { };
+
+  Main(Genode::Env &env) : _env(env)
+  {
+    const char *names[] = { "RM", "PD", "CPU", "IO_MEM", "IO_PORT", "IRQ", "ROM", "LOG", 0 };
+
+    for (unsigned i = 0; names[i]; i++) {
+      new (_heap) MyChild::Parent_service(_parent_services, env, names[i]);
+    }
+
+    new (_heap) MyChild(_env, _parent_services);
+  }
+};
+
 void Component::construct(Genode::Env &env)
 {
   Genode::log("Hello World from child!");
 
-  Genode::Heap _heap {env.ram(), env.rm()};
-
-  static const char *names[] = {
-				/* core services */
-				"RM", "PD", "CPU", "IO_MEM", "IO_PORT", "IRQ", "ROM", "LOG",
-
-				0 /* null-termination */
-  };
-  MyChild::Parent_services _parent_services { };
-  for (unsigned i = 0; names[i]; i++)
-    new (_heap) MyChild::Parent_service(_parent_services, env, names[i]);
-
-  MyChild mychild(env, _parent_services);
-
-  while(1) {
-  }
+  static Example::Main main(env);
 }
