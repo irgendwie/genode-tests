@@ -99,4 +99,11 @@ void Component::construct(Genode::Env &env)
   Genode::log("Hello World from child!");
 
   static Example::Main main(env);
+
+  /* The component does not exit after the construct function returns. Instead, it be-
+   * comes ready to respond to requests or signals originating from other components. The
+   * example above does not interact with other components though.
+   *
+   * Genode Foundations p. 30
+   */
 }
