@@ -1,0 +1,26 @@
+build { core init app/threads }
+
+create_boot_directory
+
+install_config {
+    <config>
+    <parent-provides>
+    <service name="LOG"/>
+    <service name="PD"/>
+    <service name="CPU"/>
+    <service name="ROM"/>
+    </parent-provides>
+    <default-route>
+    <any-service><parent/><any-child/></any-service>
+    </default-route>
+    <default caps="50"/>
+    <start name="threads">
+    <resource name="RAM" quantum="1M"/>
+    </start>
+    </config>}
+
+build_boot_image { core ld.lib.so init threads }
+
+append qemu_args " -nographic -smp 4 "
+
+run_genode_until forever
