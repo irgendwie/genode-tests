@@ -1,4 +1,4 @@
-build { core init app/threads }
+build { core init drivers/timer app/threads }
 
 create_boot_directory
 
@@ -10,17 +10,25 @@ install_config {
     <service name="CPU"/>
     <service name="ROM"/>
     </parent-provides>
+    <affinity-space width="4" />
     <default-route>
     <any-service><parent/><any-child/></any-service>
     </default-route>
     <default caps="50"/>
+    <start name="timer">
+	<resource name="RAM" quantum="1M"/>
+	<provides><service name="Timer"/></provides>
+    </start>
     <start name="threads">
     <resource name="RAM" quantum="1M"/>
     </start>
     </config>}
 
-build_boot_image { core ld.lib.so init threads }
+build_boot_image { core init timer threads }
 
-append qemu_args " -nographic -smp 4 "
+append qemu_args " -nographic -smp 4,cores=4 "
 
-run_genode_until forever
+source ${genode_dir}/repos/genode-Profiler/run/profiler.inc
+set show_plot true
+
+run_genode_until "done123" 30
