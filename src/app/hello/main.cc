@@ -1,6 +1,6 @@
 #include <base/component.h>
 
-void Component::construct(Genode::Env &env)
+void Component::construct(Genode::Env &)
 {
   Genode::log("Hello World from hello!");
 }
