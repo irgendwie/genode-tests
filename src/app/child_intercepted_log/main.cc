@@ -76,8 +76,10 @@ public:
     Genode::Service *service = nullptr;
     service = _find_service(_parent_services, service_name);
     if (!strcmp("LOG", service_name.string())) {
+      Genode::log("--> ", service_name.string(), " session intercepter --> use our own ", service_name.string(), " session");
       service = &_ls;
     }
+    Genode::log("--> ", service_name.string());
     return route(*service);
   }
 };
@@ -108,7 +110,7 @@ class Custom::Log_session_component : public Genode::Rpc_object<Genode::Log_sess
   }
 
   size_t write(String const &string_buf) {
-    Genode::log("--> log session intercepter!");
+    Genode::log("Hello from intercepter! *wave*");
     auto result = _parent_log.write(string_buf);
     return result;
   }
@@ -129,7 +131,7 @@ class Custom::Log_session_factory : public Genode::Local_service<Custom::Log_ses
     _env(env)
   { }
 
-  Custom::Log_session_component &create(Args const &args, Genode::Affinity) override
+  Custom::Log_session_component &create(Args const &priargs, Genode::Affinity) override
   {
     return *new (_alloc) Custom::Log_session_component(_ep, _env, "hello");
   }
