@@ -78,8 +78,9 @@ public:
     if (!strcmp("LOG", service_name.string())) {
       Genode::log("--> ", service_name.string(), " session intercepter --> use our own ", service_name.string(), " session");
       service = &_ls;
+    } else {
+      Genode::log("--> ", service_name.string());
     }
-    Genode::log("--> ", service_name.string());
     return route(*service);
   }
 };
@@ -164,10 +165,10 @@ struct Example::Main
     // create new entrypoint
     Genode::Entrypoint *_ep = new (_heap) Genode::Entrypoint(_env, 16 * 1024, "custom ep");
     Custom::Log_session_factory _clf { _heap, _ep->rpc_ep(), _env };
-    Genode::Local_service<Custom::Log_session_component> ls { _clf };
+    Genode::Local_service<Custom::Log_session_component> cls { _clf };
     /******************/
 
-    new (_heap) MyChild(_env, _parent_services, ls);
+    new (_heap) MyChild(_env, _parent_services, cls);
   }
 };
 
