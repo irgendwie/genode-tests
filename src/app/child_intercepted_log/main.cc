@@ -108,7 +108,7 @@ class Custom::Log_session_component : public Genode::Rpc_object<Genode::Log_sess
   }
 
   size_t write(String const &string_buf) {
-    Genode::log("interception!");
+    Genode::log("--> log session intercepter!");
     auto result = _parent_log.write(string_buf);
     return result;
   }
@@ -129,10 +129,9 @@ class Custom::Log_session_factory : public Genode::Local_service<Custom::Log_ses
     _env(env)
   { }
 
-  Custom::Log_session_component &create(Args const &, Genode::Affinity) override
+  Custom::Log_session_component &create(Args const &args, Genode::Affinity) override
   {
-    Genode::log("creating log_session_component");
-    return *new (_alloc) Custom::Log_session_component(_ep, _env, "test");
+    return *new (_alloc) Custom::Log_session_component(_ep, _env, "hello");
   }
 
   void upgrade(Custom::Log_session_component &, Args const &) override { }
