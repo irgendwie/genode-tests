@@ -1,5 +1,9 @@
+#ifndef __swcr_target_child_h__
+#define __swcr_target_child_h__
+
 #include <base/child.h>
 #include <swcr/services/pd.h>
+#include <swcr/services/cpu.h>
 
 namespace SWCR
 {
@@ -12,12 +16,17 @@ class SWCR::Target_child : public Genode::Child_policy
 {
     private:
     Genode::Env &_env;
+    Genode::Heap _heap;
     Genode::Cap_quota const _cap_quota { 50 };
-    Genode::Ram_quota const _ram_quota { 1 * 1024 * 1024 };
+    Genode::Ram_quota const _ram_quota { 8 * 1024 * 1024 };
 
     Parent_services &_parent_services;
 
-    Genode::Local_service<Pd_session_component> &_swcr_pd;
+    SWCR::Pd_session_factory _psf;
+    Genode::Local_service<Pd_session_component> _pls;
+
+    SWCR::Cpu_session_factory *_csf;
+    Genode::Local_service<Cpu_session_component> *_cls;
 
     Genode::Child _child;
 
@@ -44,14 +53,23 @@ class SWCR::Target_child : public Genode::Child_policy
 
         Genode::Service *service = nullptr;
         if (!Genode::strcmp("PD", service_name.string()))
-            service = &_swcr_pd;
+            service = &_pls;
+        else if (!Genode::strcmp("CPU", service_name.string()))
+            service = _cls;
         else
             service = _find_service(_parent_services, service_name);
         return route(*service);
     }
 
     public:
-    Target_child(Genode::Env &env, Parent_services &parent_services, Genode::Local_service<Pd_session_component> &swcr_pd) : _env(env), _parent_services(parent_services), _swcr_pd(swcr_pd), _child(_env.rm(), _env.ep().rpc_ep(), *this) { }
+    Target_child(Genode::Env &env,
+                 Parent_services &parent_services) : _env(env),
+                                                     _heap(_env.ram(), _env.rm()),
+                                                     _parent_services(parent_services),
+                                                     _psf(_env, _heap, "hello"),
+                                                     _pls(_psf),
+                                                     _child(_env.rm(), _env.ep().rpc_ep(), *this)
+    { }
     ~Target_child() { };
 
     Name name() const override { return "hello"; };
@@ -59,10 +77,19 @@ class SWCR::Target_child : public Genode::Child_policy
     Genode::Pd_session &ref_pd() override { return _env.pd(); }
     Genode::Pd_session_capability ref_pd_cap() const override { return _env.pd_session_cap(); }
 
-    void init(Genode::Pd_session &pd, Genode::Pd_session_capability pd_cap) override
+    void init(Genode::Pd_session &custom_pd, Genode::Pd_session_capability pd_cap) override
     {
-        pd.ref_account(ref_pd_cap());
-        ref_pd().transfer_quota(pd_cap, _cap_quota);
-        ref_pd().transfer_quota(pd_cap, _ram_quota);
+        custom_pd.ref_account(ref_pd_cap());
+        Genode::log("transfering");
+        Pd_session_component &pdsc = _psf.custom_pd_session_component();
+        _csf = new (_heap) SWCR::Cpu_session_factory(_env, _heap, pdsc);
+        _cls = new (_heap) Genode::Local_service<SWCR::Cpu_session_component>(*_csf);
+        ref_pd().transfer_quota(pdsc.parent_pd_cap(), _cap_quota);
+        ref_pd().transfer_quota(pdsc.parent_pd_cap(), _ram_quota);
+        Genode::log("done");
+        /*ref_pd().transfer_quota(_cpsc.parent_pd_cap(), _cap_quota);
+        ref_pd().transfer_quota(_cpsc.parent_pd_cap(), _ram_quota);*/
     }
 };
+
+#endif /*__swcr_target_child_h__*/
