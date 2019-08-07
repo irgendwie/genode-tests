@@ -4,6 +4,8 @@
 #include <root/component.h>
 #include <pd_session/connection.h>
 
+#include <swcr/services/region_map_component.h>
+
 namespace SWCR
 {
     class Pd_session_component;
@@ -17,6 +19,8 @@ class SWCR::Pd_session_component : public Genode::Rpc_object<Genode::Pd_session>
     private:
     Genode::Env &_env;
     Genode::Pd_connection _real_pd;
+
+  SWCR::Region_map_component _stack_area;
 
     public:
     Pd_session_component(Genode::Env &env, const char *label) : _env(env), _real_pd(_env, label)
