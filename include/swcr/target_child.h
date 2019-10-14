@@ -28,6 +28,8 @@ class SWCR::Target_child : public Genode::Child_policy
     SWCR::Cpu_session_factory *_csf;
     Genode::Local_service<Cpu_session_component> *_cls;
 
+    Pd_session_component *pd_sess_comp;
+
     Genode::Child _child;
 
     template <typename T>
@@ -66,13 +68,13 @@ class SWCR::Target_child : public Genode::Child_policy
                  Parent_services &parent_services) : _env(env),
                                                      _heap(_env.ram(), _env.rm()),
                                                      _parent_services(parent_services),
-                                                     _psf(_env, _heap, "hello"),
+                                                     _psf(_env, _heap, "mem_alloc"),
                                                      _pls(_psf),
                                                      _child(_env.rm(), _env.ep().rpc_ep(), *this)
     { }
     ~Target_child() { };
 
-    Name name() const override { return "hello"; };
+    Name name() const override { return "mem_alloc"; };
 
     Genode::Pd_session &ref_pd() override { return _env.pd(); }
     Genode::Pd_session_capability ref_pd_cap() const override { return _env.pd_session_cap(); }
@@ -82,6 +84,7 @@ class SWCR::Target_child : public Genode::Child_policy
         custom_pd.ref_account(ref_pd_cap());
         Genode::log("transfering");
         Pd_session_component &pdsc = _psf.custom_pd_session_component();
+        pd_sess_comp = &pdsc;
         _csf = new (_heap) SWCR::Cpu_session_factory(_env, _heap, pdsc);
         _cls = new (_heap) Genode::Local_service<SWCR::Cpu_session_component>(*_csf);
         ref_pd().transfer_quota(pdsc.parent_pd_cap(), _cap_quota);
@@ -89,6 +92,22 @@ class SWCR::Target_child : public Genode::Child_policy
         Genode::log("done");
         /*ref_pd().transfer_quota(_cpsc.parent_pd_cap(), _cap_quota);
         ref_pd().transfer_quota(_cpsc.parent_pd_cap(), _ram_quota);*/
+    }
+
+    void resource_request(Genode::Parent::Resource_args const &args)
+    {
+        Genode::Ram_quota ram = Genode::ram_quota_from_args(args.string());
+        Genode::Cap_quota caps = Genode::cap_quota_from_args(args.string());
+
+        if (ram.value) {
+            _env.pd().transfer_quota(pd_sess_comp->parent_pd_cap(), ram);
+        }
+
+        if (caps.value) {
+            _env.pd().transfer_quota(pd_sess_comp->parent_pd_cap(), caps);
+        }
+
+        _child.notify_resource_avail();
     }
 };
 

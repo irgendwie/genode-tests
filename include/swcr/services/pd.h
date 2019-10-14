@@ -4,25 +4,21 @@
 #include <root/component.h>
 #include <pd_session/connection.h>
 
-#include <swcr/services/region_map_component.h>
-
 namespace SWCR
 {
-    class Pd_session_component;
-    class Pd_session_factory;
-}
+class Pd_session_component;
+class Pd_session_factory;
+} // namespace SWCR
 
 using namespace Genode;
 
 class SWCR::Pd_session_component : public Genode::Rpc_object<Genode::Pd_session>
 {
-    private:
+private:
     Genode::Env &_env;
     Genode::Pd_connection _real_pd;
 
-  SWCR::Region_map_component _stack_area;
-
-    public:
+public:
     Pd_session_component(Genode::Env &env, const char *label) : _env(env), _real_pd(_env, label)
     {
         _env.ep().rpc_ep().manage(this);
@@ -184,16 +180,16 @@ class SWCR::Pd_session_component : public Genode::Rpc_object<Genode::Pd_session>
 
 class SWCR::Pd_session_factory : public Genode::Local_service<Pd_session_component>::Factory
 {
-    private:
+private:
     Genode::Env &_env;
     Genode::Allocator &_alloc;
     const char *_label;
 
     Pd_session_component *_cpsc;
 
-    public:
-    Pd_session_factory(Genode::Env &env, Genode::Allocator &alloc, const char *label) : _env(env), _alloc(alloc), _label(label) { }
-    ~Pd_session_factory() { }
+public:
+    Pd_session_factory(Genode::Env &env, Genode::Allocator &alloc, const char *label) : _env(env), _alloc(alloc), _label(label) {}
+    ~Pd_session_factory() {}
 
     Pd_session_component &create(Args const &, Genode::Affinity) override
     {
@@ -201,7 +197,7 @@ class SWCR::Pd_session_factory : public Genode::Local_service<Pd_session_compone
         return *_cpsc;
     }
 
-    void upgrade(Pd_session_component &, Args const &) override { }
+    void upgrade(Pd_session_component &, Args const &) override {}
 
     void destroy(Pd_session_component &session) override
     {

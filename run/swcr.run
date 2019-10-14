@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core init app/swcr app/hello }
+build { core init app/swcr app/mem_alloc }
 
 create_boot_directory
 
@@ -23,7 +23,7 @@ install_config {
 	</default-route>
 	<default caps="200"/>
 	<start name="swcr">
-		<resource name="RAM" quantum="128M"/>
+		<resource name="RAM" quantum="100M"/>
 	</start>
 </config>}
 
@@ -31,7 +31,7 @@ install_config {
 # Boot image
 #
 
-build_boot_image { core ld.lib.so init swcr hello }
+build_boot_image { core ld.lib.so init swcr mem_alloc }
 
 append qemu_args " -nographic "
 
